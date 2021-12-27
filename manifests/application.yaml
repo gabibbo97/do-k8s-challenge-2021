@@ -1,0 +1,58 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-producer
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kafka-test
+      app.kubernetes.io/component: producer
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kafka-test
+        app.kubernetes.io/component: producer
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/name: kafka-test
+                  app.kubernetes.io/component: producer
+      containers:
+      - name: producer
+        image: registry.digitalocean.com/do-k8s-kafka/kafka-sample:0.1.2
+        env:
+        - { name: SAMPLE_ROLE, value: producer }
+        - { name: BOOTSTRAP_SERVERS, value: my-cluster-kafka-bootstrap }
+        - { name: TOPIC_NAME, value: my-topic }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-consumer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kafka-test
+      app.kubernetes.io/component: consumer
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: kafka-test
+        app.kubernetes.io/component: consumer
+    spec:
+      containers:
+      - name: consumer
+        image: registry.digitalocean.com/do-k8s-kafka/kafka-sample:0.1.2
+        env:
+        - { name: SAMPLE_ROLE, value: consumer }
+        - { name: BOOTSTRAP_SERVERS, value: my-cluster-kafka-bootstrap }
+        - { name: TOPIC_NAME, value: my-topic }
